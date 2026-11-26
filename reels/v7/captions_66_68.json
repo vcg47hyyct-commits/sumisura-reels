@@ -16,9 +16,12 @@
    [
     "66_runners_dont_skip_sauna"
    ]
+  ],
+  [
+   "2026-11-28T17:00:00",
+   [
+    "68_run_isnt_over_sauna"
+   ]
   ]
- ],
- "pending": {
-  "68_run_isnt_over_sauna": "planned Sat 2026-11-28 17:00, waiting for the MAGI-2 clip (MAGI_PROMPT in engine/specs6.py)"
- }
+ ]
 }

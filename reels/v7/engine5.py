@@ -219,11 +219,29 @@ def sc_end(im, d, sc, t, dur, acc):
     lg = LOGO.resize((150, 150)); a = fade(t, .5, .4); lg.putalpha(lg.getchannel("A").point(lambda v: int(v * a)))
     im.paste(lg, (465, 1210), lg)
 
+def _shade():                                       # lighter than engine4: footage stays visible, text stays readable
+    g = np.full((H, W), .04, np.float32)
+    g[:720] = np.maximum(g[:720], np.linspace(.56, .04, 720)[:, None]); g[H - 860:] = np.maximum(g[H - 860:], np.linspace(.04, .5, 860)[:, None])
+    g[1180:1380] = np.maximum(g[1180:1380], .34)   # band behind the captions
+    return Image.fromarray(np.dstack([np.full((H, W), c, np.uint8) for c in INK] + [(g * 255).astype(np.uint8)]), "RGBA")
+SHADE = _shade()
 NEW = dict(hook2=sc_hook2, guess=sc_guess, race=sc_race, timer=sc_timer, clock=sc_clock, text=sc_text)
 
 def draw_scene(sc, t, dur, acc, fi, tg):
     typ = sc["type"]
-    if typ not in NEW and typ != "end": return e.draw_scene(sc, t, dur, acc, fi, False)   # clip, stat, compare, dots...
+    if typ == "clip":                               # footage with text on top, properly alpha-blended
+        im = sc["_clip"].frame(); im.paste(SHADE, (0, 0), SHADE); d = ImageDraw.Draw(im, "RGBA")
+        if sc.get("label"): label(d, t, sc["label"], acc)
+        for i, s_ in enumerate(sc.get("head", [])):
+            f = fit(F(800 if i == 0 else 600, 96 if i == 0 else 78), s_)
+            if i == 0: slam = ease(t / .18); f = f.font_variant(size=int(f.size * (1 + .22 * (1 - slam)))); a = slam
+            else: a = fade(t, sc.get("_sw2", .35), .15)
+            T(d, (543, 335 + i * 124), s_, f, a * .75, INK)
+            T(d, (540, 330 + i * 124), s_, f, a, GOLD if s_ in sc.get("gold", []) else PAPER)
+        source(d, t, sc.get("src"))
+        if sc.get("_words") is not None: captions(d, sc["_words"], t, acc)
+        return im
+    if typ not in NEW and typ != "end": return e.draw_scene(sc, t, dur, acc, fi, False)   # stat, compare, dots...
     k = 1.0; bright = 1.0
     if typ == "hook2":
         sw = sc["_sw"]; k = .7 if t < sw else 1.2 + 2.6 * math.exp(-(t - sw) * 1.5); bright = .9 if t < sw else 1.12
@@ -263,7 +281,11 @@ def build(spec, still=False):
         dur = d_ + GAP + sc.get("hold", 0)
         if sc["type"] == "end": dur = max(dur, 2.6)
         sc["_bg"] = e.make_bg(acc, .38)
-        if sc["type"] == "clip": sc["_clip"] = Clip(sc["file"], sc.get("start", 0.0))
+        if sc["type"] == "clip":
+            sc["_clip"] = Clip(sc["file"], sc.get("start", 0.0))
+            r = subprocess.run(["ffmpeg", "-v", "error", "-ss", str(sc.get("start", 0.0)), "-t", str(dur), "-i", sc["_clip"].path,
+                                "-vn", "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True)
+            sc["_amb"] = np.frombuffer(r.stdout, np.float32).astype(np.float64)      # the clip's own sound, kept low under the voice
         wt = word_times(sc["vo"], d_, 0.0); sc["_words"] = wt if sc.get("caps", True) else None
         if sc["type"] == "hook2": sc["_sw"] = wt[sc["switch"]][1]
         if sc["type"] == "race": sc["_T1"] = min(1.5, dur * .42); sc["_T2"] = min(dur - .55, sc["_T1"] + 1.15)
@@ -274,6 +296,9 @@ def build(spec, still=False):
         typ = sc["type"]; mix(audio, aud * .95, t0 + .03)
         if i == 0: mix(audio, BOOM, 0); mix(audio, WHOOSH * .5, .05)
         else: mix(audio, WHOOSH, t0 - .12)
+        if typ == "clip" and len(sc.get("_amb", [])):
+            amb = sc["_amb"].copy(); n = min(len(amb), int(SR * .15)); amb[:n] *= np.linspace(0, 1, n); amb[-n:] *= np.linspace(1, 0, n)
+            mix(audio, amb * sc.get("amb", .32) / (np.abs(amb).max() + 1e-6) * .5, t0)
         if typ == "hook2": steps(audio, t0 + .05, t0 + sc["_sw"] - .05); mix(audio, HISS, t0 + sc["_sw"]); mix(audio, BOOM * .5, t0 + sc["_sw"])
         if typ == "guess":
             for k in range(len(sc["opts"])): mix(audio, TICK * 1.5, t0 + .55 + k * .3)

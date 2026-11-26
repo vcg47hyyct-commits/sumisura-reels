@@ -47,7 +47,7 @@ REELS = [
    dict(type="race", top="3 weeks of sauna after training", lanes=["Training only", "Training + sauna"], count=32, fmt="+{:.0f}%",
         sub="longer before exhaustion", src=SRC,
         vo="Runners, three weeks. Training only: exhausted. With sauna: thirty-two percent longer."),
-   dict(type="clip", file="footage/ai/68_run_isnt_over_sauna/magi2.mp4", start=5.2,
+   dict(type="clip", file="footage/ai/68_run_isnt_over_sauna/magi2.mp4", start=5.7,
         head=["In a race:", "about 1.9% faster."], gold=["about 1.9% faster."], src=SRC,
         vo="In a race, that's about one point nine percent faster."),
    dict(type="clip", file="footage/ai/68_run_isnt_over_sauna/magi2.mp4", start=10.2, label="The dose",
