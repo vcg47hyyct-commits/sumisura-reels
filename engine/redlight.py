@@ -34,44 +34,52 @@ HOOK_VO = dict(
 HF_STYLE = ("Abstract macro, photorealistic, vertical 9:16, 5 seconds, dark background, slow smooth motion, shallow depth of field. "
             "No face, no person, no room, no device, no text, no logo.")
 HF_SHOTS = dict(
-    acne=[("skin_waves", "Extreme macro of smooth human skin texture filling the frame, unrecognisable, pores visible. Soft waves of blue light and red light sweep slowly across the surface, one after the other, blue and red clearly both present."),
-          ("cells", "Microscopic view of round translucent skin cells drifting slowly. Blue light and red light pulse gently through them in alternating waves."),
-          ("waves", "Two smooth ribbons of light, one blue and one red, flowing side by side in slow sine waves across a black background.")],
-    wrinkles=[("skin_red", "Extreme macro of human skin texture with fine lines, unrecognisable, filling the frame. A soft wave of warm red light sweeps slowly across the surface."),
-              ("fibres", "Microscopic abstract view of fine pale fibres forming a dense woven network, slowly drifting, lit by soft red light."),
-              ("red_waves", "Smooth ribbons of red light flowing in slow sine waves across a black background.")])
+    acne=[("skin_spots", "Extreme macro of human skin texture filling the whole frame, unrecognisable body part, visible pores, a few small red inflamed spots, soft neutral daylight, very slow push-in."),
+          ("skin_waves", "Extreme macro of smooth human skin texture filling the whole frame, unrecognisable, pores visible. Soft waves of blue light and red light sweep slowly across the surface one after the other, blue and red both clearly present."),
+          ("cells", "Microscopic view of round translucent cells drifting slowly on a dark background. Blue light and red light pulse gently through them in alternating waves.")],
+    wrinkles=[("skin_lines", "Extreme macro of human skin texture with fine lines and creases filling the whole frame, unrecognisable body part, soft neutral daylight from the side so the lines cast tiny shadows, very slow push-in."),
+              ("skin_red", "Extreme macro of human skin texture with fine lines filling the whole frame, unrecognisable. A soft wave of warm red light sweeps slowly across the surface."),
+              ("fibres", "Microscopic abstract view of fine pale fibres forming a dense woven network, slowly drifting on a dark background, lit by soft red light.")])
 
 # ---------- reels: (start, end, visual, on-screen lines, voice-over) ----------
+# No own footage yet (Nov 2026): every footage slot is an own animation. When footage/redlight/<name>.mp4 exists it is used instead.
+def own(clip, kind, arg=None):
+    p = f"footage/redlight/{clip}.mp4"
+    return ("clip", p) if os.path.exists(os.path.join(REPO, p)) else ("anim", kind, arg)
+
 def reel(name, v, hf):
     h, hv = HOOKS[name][v], HOOK_VO[name][v]
     ai = lambda n: ("ai", f"footage/ai/{name}/{n}.mp4")
     if name == "acne":
-        panel = os.path.exists(os.path.join(REPO, "footage/redlight/BLUE_OK.txt"))
+        panel = os.path.exists(os.path.join(REPO, "footage/redlight/BLUE_OK.txt")) and os.path.exists(os.path.join(REPO, "footage/redlight/panel_on.mp4"))
+        first = ai("skin_spots") if hf else own("mirror_chin", "spots")
+        l2 = "Still breaking out?" if v == "B" else "Tried every cream?"          # hook B already says "tried every cream"
         return [
-            (0, 2, ("clip", "footage/redlight/mirror_chin.mp4"), dict(hook=h), hv),
-            (2, 4, ("clip", "footage/redlight/creams.mp4"), dict(lines=["Tried every cream?"]), "Tried every cream?"),
+            (0, 2, first, dict(hook=h), hv),
+            (2, 4, own("creams", "tubes"), dict(lines=[l2]), l2),
             (4, 6, ai("skin_waves") if hf else ("anim", "skin", (BLUE, RED)), dict(lines=["Blue + red light."], grp=0), "One study: blue plus red light."),
             (6, 8, ai("cells") if hf else ("anim", "cells", (BLUE, RED)), dict(lines=["Blue + red light.", "15 min a day.", "12 weeks."], grp=0, src="Papageorgiou et al., Br J Dermatol 2000"),
              "Fifteen minutes a day. Twelve weeks."),
             (8, 10, ("anim", "bar", dict(vals=[(76, "-76%", RED)], sub="inflamed spots", count=True)), dict(src="Papageorgiou et al., Br J Dermatol 2000 · 107 people"),
              "Inflamed spots: minus seventy-six percent,"),
-            (10, 12, ("anim", "bar", dict(vals=[(76, "-76%", RED)], sub="inflamed spots", count=False, zoom=True)), dict(src="Papageorgiou et al., Br J Dermatol 2000 · 107 people"),
+            (10, 12, ("anim", "bar", dict(vals=[(76, "-76%", RED)], sub="inflamed spots", count=False)), dict(src="Papageorgiou et al., Br J Dermatol 2000 · 107 people"),
              "on average."),
-            (12, 14, ("clip", "footage/redlight/panel_on.mp4") if panel else (ai("waves") if hf else ("anim", "waves", (BLUE, RED))),
+            (12, 14, ("clip", "footage/redlight/panel_on.mp4") if panel else ("anim", "waves", (BLUE, RED)),
              dict(lines=["Mild to moderate acne.", "Not a cure."]), "Mild to moderate acne. Not a cure."),
-            (14, 15, ("loop", "footage/redlight/mirror_chin.mp4"), dict(hook=h), None)]
+            (14, 15, ("loop", first), dict(hook=h), None)]
+    first = ai("skin_lines") if hf else own("mirror_eyes", "wrinkle")
     return [
-        (0, 2, ("clip", "footage/redlight/mirror_eyes.mp4"), dict(hook=h), hv),
-        (2, 4, ("clip", "footage/redlight/cream_close.mp4"), dict(lines=["Another cream?"]), "Another cream?"),
-        (4, 6, ("clip", "footage/redlight/panel_on.mp4"), dict(lines=["Red light."], grp=0), "One study: red light."),
-        (6, 8, ("clip", "footage/redlight/panel_sit.mp4"), dict(lines=["Red light.", "2x a week.", "30 sessions."], grp=0, src="Wunsch & Matuschka, Photomed Laser Surg 2014"),
+        (0, 2, first, dict(hook=h), hv),
+        (2, 4, own("cream_close", "jar"), dict(lines=["Another cream?"]), "Another cream?"),
+        (4, 6, ai("skin_red") if hf else own("panel_on", "panel", 0), dict(lines=["Red light."], grp=0), "One study: red light."),
+        (6, 8, own("panel_sit", "panel", 1), dict(lines=["Red light.", "2x a week.", "30 sessions."], grp=0, src="Wunsch & Matuschka, Photomed Laser Surg 2014"),
          "Twice a week. Thirty sessions."),
         (8, 10, ("anim", "bar", dict(vals=[(69, "69%", RED), (4, "4%", WHITE)], labs=["Red light", "Control group"], top="Fewer wrinkles:", count=True, bg=ai("fibres") if hf else None)),
          dict(src="Wunsch & Matuschka, Photomed Laser Surg 2014 · 136 people"), "Fewer wrinkles in sixty-nine percent."),
-        (10, 12, ("anim", "bar", dict(vals=[(69, "69%", RED), (4, "4%", WHITE)], labs=["Red light", "Control group"], top="Fewer wrinkles: 69% vs 4%", count=False, zoom=True, bg=ai("red_waves") if hf else None)),
+        (10, 12, ("anim", "bar", dict(vals=[(69, "69%", RED), (4, "4%", WHITE)], labs=["Red light", "Control group"], top="Fewer wrinkles: 69% vs 4%", count=False, bg=ai("fibres") if hf else None)),
          dict(src="Wunsch & Matuschka, Photomed Laser Surg 2014 · 136 people"), "Versus four percent, without light."),
-        (12, 14, ("clip", "footage/redlight/face_glow.mp4"), dict(lines=["Not a miracle.", "A dose."]), "Not a miracle. A dose."),
-        (14, 15, ("loop", "footage/redlight/mirror_eyes.mp4"), dict(hook=h), None)]
+        (12, 14, own("face_glow", "glow"), dict(lines=["Not a miracle.", "A dose."]), "Not a miracle. A dose."),
+        (14, 15, ("loop", first), dict(hook=h), None)]
 
 # ---------- text: white with a soft shadow, always inside the safe zone ----------
 def TS(im, xy, s, font, a=1., col=WHITE, anchor="ma"):
@@ -101,7 +109,8 @@ def caps(im, words, t):
         if t >= a0: idx = i
     c0 = (idx // 3) * 3; chunk = words[c0:c0 + 3]; f = F(700, 58)
     while sum(f.getlength(w) for w, _, _ in chunk) + 18 * (len(chunk) - 1) > MAXW: f = f.font_variant(size=f.size - 4)
-    sz = [f.getlength(w) for w, _, _ in chunk]; x = CX - (sum(sz) + 18 * (len(chunk) - 1)) / 2
+    sz = [f.getlength(w) for w, _, _ in chunk]; tot = sum(sz) + 18 * (len(chunk) - 1); x = CX - tot / 2
+    ImageDraw.Draw(im, "RGBA").rounded_rectangle((x - 26, 1196, x + tot + 26, 1296), radius=22, fill=(0, 0, 0, 120))   # band so captions read on any visual
     for (w, a0, a1), s in zip(chunk, sz):
         if t >= a0: TS(im, (x, 1210), w, f, 1., GOLD if a0 <= t < a1 + .05 else WHITE, "la")
         x += s + 18
@@ -109,10 +118,13 @@ def caps(im, words, t):
 # ---------- own animations (the "Fable" version) ----------
 _rs = np.random.default_rng(3)
 def _skin():
-    n = np.asarray(Image.fromarray(_rs.random((96, 54)).astype(np.float32)).resize((W, H), Image.BICUBIC))
+    n = np.asarray(Image.fromarray(_rs.random((48, 27)).astype(np.float32)).resize((W, H), Image.BICUBIC))
     p = np.asarray(Image.fromarray(((_rs.random((H // 3, W // 3)) > .985) * 255).astype(np.uint8)).resize((W, H), Image.BILINEAR).filter(ImageFilter.GaussianBlur(2))) / 255
-    return (np.array((196, 150, 128), np.float32) * (.82 + .3 * n)[..., None]) * (1 - .5 * p[..., None])
+    return (np.array((186, 140, 120), np.float32) * (.80 + .16 * n)[..., None]) * (1 - .35 * p[..., None])
 SKIN = _skin()
+_sp = np.random.default_rng(5); SPOTS = np.zeros((H, W), np.float32)
+for _x, _y, _r in zip(_sp.uniform(120, 960, 9), _sp.uniform(700, 1800, 9), _sp.uniform(26, 58, 9)):
+    SPOTS = np.maximum(SPOTS, np.exp(-(((xx - _x) ** 2 + (yy - _y) ** 2) / _r ** 2)))
 U = (xx * .45 + yy) / (W * .45 + H)                      # diagonal coordinate 0..1
 
 def _ribbons(d, t, cols, y0, amp=120, n=2, a=1.):
@@ -142,6 +154,61 @@ def anim(kind, arg, t, fi):
         im = Image.new("RGB", (W, H), (9, 9, 13)); d = ImageDraw.Draw(im, "RGBA")
         _ribbons(d, t, arg, 620, amp=150, n=3)
         g = im.filter(ImageFilter.GaussianBlur(26)); return Image.blend(im, Image.eval(g, lambda v: min(255, int(v * 2.2))), .5)
+    if kind == "spots":                                  # skin close-up with inflamed spots (the viewer's problem)
+        pu = .75 + .25 * math.sin(t * 6)
+        arr = SKIN * .92 + SPOTS[..., None] * np.array((95, -70, -62), np.float32) * pu
+        return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+    if kind == "wrinkle":                                # skin close-up, fine lines drawing in
+        im = Image.fromarray(np.clip(SKIN * .95, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im, "RGBA"); r = np.random.default_rng(21)
+        for k in range(15):
+            y = 640 + k * 62 + r.uniform(-18, 18); x0 = r.uniform(-60, 200); ln = r.uniform(520, 1000) * min(1., .45 + t * 1.1 - k * .03); cv = r.uniform(-70, 70)
+            pts = [(x0 + u * ln, y + cv * math.sin(u * math.pi) + 7 * math.sin(u * 23 + k)) for u in np.linspace(0, 1, 40)]
+            d.line(pts, fill=(92, 58, 46, 150), width=5, joint="curve"); d.line([(x, yy_ + 5) for x, yy_ in pts], fill=(255, 236, 222, 60), width=3, joint="curve")
+        return im
+    if kind == "tubes":                                  # fast cuts of creams: a new product every 0.5 s
+        i = int(t / .5) % 4; lt = t % .5; col = [(238, 214, 196), (196, 222, 214), (226, 204, 232), (244, 232, 190)][i]
+        im = Image.new("RGB", (W, H), [(34, 30, 30), (26, 32, 32), (32, 28, 36), (34, 32, 26)][i]); d = ImageDraw.Draw(im, "RGBA")
+        sc_ = 1 + .12 * (1 - ease(lt / .14)); cx, cy = 540, 900; g = lambda v_: v_ * sc_
+        if i == 0:   # tube
+            d.polygon([(cx - g(150), cy - g(330)), (cx + g(150), cy - g(330)), (cx + g(110), cy + g(250)), (cx - g(110), cy + g(250))], fill=col)
+            d.rounded_rectangle((cx - g(80), cy + g(250), cx + g(80), cy + g(360)), radius=14, fill=(250, 250, 250))
+        elif i == 1:  # jar
+            d.rounded_rectangle((cx - g(230), cy - g(60), cx + g(230), cy + g(230)), radius=44, fill=col)
+            d.rounded_rectangle((cx - g(250), cy - g(170), cx + g(250), cy - g(50)), radius=26, fill=(250, 250, 250))
+        elif i == 2:  # pump bottle
+            d.rounded_rectangle((cx - g(140), cy - g(150), cx + g(140), cy + g(360)), radius=40, fill=col)
+            d.rectangle((cx - g(28), cy - g(290), cx + g(28), cy - g(150)), fill=(250, 250, 250)); d.rounded_rectangle((cx - g(150), cy - g(340), cx + g(40), cy - g(280)), radius=16, fill=(250, 250, 250))
+        else:         # dropper
+            d.rounded_rectangle((cx - g(120), cy - g(40), cx + g(120), cy + g(340)), radius=34, fill=col)
+            d.rounded_rectangle((cx - g(70), cy - g(160), cx + g(70), cy - g(40)), radius=18, fill=(250, 250, 250)); d.ellipse((cx - g(52), cy - g(300), cx + g(52), cy - g(150)), fill=(60, 56, 56))
+        return im
+    if kind == "jar":                                    # cream jar, lid coming down and closing
+        im = Image.new("RGB", (W, H), (30, 27, 27)); d = ImageDraw.Draw(im, "RGBA"); cx, cy = 540, 960
+        k = ease(t / .7); bounce = 14 * math.sin(min(1., max(0., (t - .7) / .25)) * math.pi)
+        d.rounded_rectangle((cx - 270, cy - 40, cx + 270, cy + 300), radius=54, fill=(240, 222, 208))
+        d.ellipse((cx - 240, cy - 78, cx + 240, cy + 2), fill=(255, 250, 244))
+        ly = cy - 560 + 470 * k - bounce
+        d.rounded_rectangle((cx - 292, ly, cx + 292, ly + 130), radius=30, fill=(250, 250, 250)); d.rounded_rectangle((cx - 292, ly + 96, cx + 292, ly + 130), radius=14, fill=(214, 214, 214))
+        return im
+    if kind == "panel":                                  # drawn LED panel: 0 = switching on row by row, 1 = on, light travelling out
+        im = Image.new("RGB", (W, H), (14, 8, 8)); d = ImageDraw.Draw(im, "RGBA"); rows, cols = 13, 7
+        for r_ in range(rows):
+            on = 1. if arg else ease((t * 1.5 - r_ * .08) / .2)
+            for c_ in range(cols):
+                x = 190 + c_ * 117; y = 640 + r_ * 86; fl = .85 + .15 * math.sin(t * 9 + r_ + c_)
+                d.ellipse((x - 30, y - 30, x + 30, y + 30), fill=(70, 22, 20, 255))
+                if on > 0: d.ellipse((x - 26, y - 26, x + 26, y + 26), fill=(255, 70, 50, int(255 * on * fl))); d.ellipse((x - 10, y - 10, x + 10, y + 10), fill=(255, 200, 180, int(230 * on)))
+        g = im.filter(ImageFilter.GaussianBlur(34)); im = Image.blend(im, Image.eval(g, lambda v_: min(255, int(v_ * 2.6))), .55)
+        if arg:
+            d = ImageDraw.Draw(im, "RGBA")
+            for k in range(4):
+                rr = ((t * .6 + k * .25) % 1) * 1100; d.ellipse((540 - rr, 1150 - rr, 540 + rr, 1150 + rr), outline=(255, 120, 100, int(120 * (1 - rr / 1100))), width=7)
+        return im
+    if kind == "glow":                                   # skin in a red glow
+        pu = .8 + .2 * math.sin(t * 3)
+        g = np.exp(-(((xx - 540) / 700) ** 2 + ((yy - 900) / 900) ** 2))[..., None]
+        arr = SKIN * (.25 + .75 * g * pu) * np.array((1.25, .42, .36), np.float32)
+        return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
     raise ValueError(kind)
 
 def bars(im, o, t, tg, fi, bg=None):
@@ -169,7 +236,8 @@ def placeholder(name):
 
 def build(name, v, hf=False, preview=False, still=False):
     segs = reel(name, v, hf)
-    need = sorted({s[2][1] for s in segs if s[2][0] in ("clip", "loop", "ai")} | {s[2][2]["bg"][1] for s in segs if s[2][0] == "anim" and s[2][1] == "bar" and s[2][2].get("bg")})
+    vis_all = [s_[2][1] if s_[2][0] == "loop" else s_[2] for s_ in segs]
+    need = sorted({v_[1] for v_ in vis_all if v_[0] in ("clip", "ai")} | {v_[2]["bg"][1] for v_ in vis_all if v_[0] == "anim" and v_[1] == "bar" and v_[2].get("bg")})
     miss = [p for p in need if not os.path.exists(_path(p))]
     if miss and not preview: raise Missing(miss)
     tag = f"{name}_v3_{v}" + ("_hf" if hf else "")
@@ -209,10 +277,13 @@ def build(name, v, hf=False, preview=False, still=False):
         t = tg - a; kind = vis[0]
         if kind in ("clip", "ai"): im = clipframe(i, vis[1], 0.3 if kind == "ai" else 0.)
         elif kind == "loop":                              # opening shot played backwards: the last frame equals frame 1
-            if loop is None:
-                if os.path.exists(_path(vis[1])): c = Clip(vis[1], 0.); loop = [c.frame() for _ in range(int((b - a) * FPS))]
-                else: loop = [placeholder(vis[1])] * int((b - a) * FPS)
-            im = loop[max(0, len(loop) - 1 - int(round(t * FPS)))].copy()
+            src = vis[1]; n = int((b - a) * FPS); k_ = max(0, n - 1 - int(round(t * FPS)))
+            if src[0] == "anim": im = anim(src[1], src[2], k_ / FPS, fi)
+            else:
+                if loop is None:
+                    if os.path.exists(_path(src[1])): c = Clip(src[1], 0.3 if src[0] == "ai" else 0.); loop = [c.frame() for _ in range(n)]
+                    else: loop = [placeholder(src[1])] * n
+                im = loop[k_].copy()
         elif vis[1] == "bar":
             o = vis[2]; bg = o.get("bg")
             im = clipframe(i, bg[1], 0.3) if bg else Image.new("RGB", (W, H), (12, 11, 12))
@@ -220,11 +291,10 @@ def build(name, v, hf=False, preview=False, still=False):
             else:
                 d0 = ImageDraw.Draw(im, "RGBA"); _ribbons(d0, tg, [o["vals"][0][2]], 1020, amp=60, a=.35)
         else: im = anim(vis[1], vis[2], tg, fi)
-        if kind in ("clip", "ai", "loop"):                # gentle shade so white text reads on any footage
+        if kind in ("clip", "ai") or (kind == "loop" and vis[1][0] != "anim"):   # gentle shade so white text reads on any footage
             im = Image.blend(im, Image.new("RGB", (W, H), (0, 0, 0)), .16)
         if kind != "loop":                                # punch-in on every cut, slow push after
             s = 1 + .035 * t / (b - a) + (.05 * (1 - ease(t / .18)) if t < .18 and tg > .05 else 0)
-            if vis[0] == "anim" and vis[1] == "bar" and vis[2].get("zoom"): pass
             w2, h2 = int(W / s), int(H / s); im = im.crop(((W - w2) // 2, (H - h2) // 2, (W - w2) // 2 + w2, (H - h2) // 2 + h2)).resize((W, H), Image.BILINEAR)
         if vis[0] == "anim" and vis[1] == "bar": bars(im, vis[2], t, tg, fi)
         if "hook" in txt:                                 # visible from frame 1: no fade-in
