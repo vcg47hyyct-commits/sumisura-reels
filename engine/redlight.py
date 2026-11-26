@@ -241,7 +241,13 @@ def build(name, v, hf=False, preview=False, still=False):
         for k, tg in enumerate(still): frame(tg, 0).save(os.path.join(out, f"{tag}_t{tg:04.1f}.jpg"), quality=82)
         return tag
     mp4 = os.path.join(out, tag + ".mp4")
-    af = "[1:a]loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[v];[2:a]aresample=48000,volume=0.5[s];[v][s]amix=inputs=2:normalize=0[a]"
+    def lufs(extra=""):                                # integrated loudness of the voice stem (EBU R128)
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-i", vw, "-af", extra + "ebur128", "-f", "null", "-"], capture_output=True, text=True).stderr
+        return float([l for l in r.splitlines() if l.strip().startswith("I:")][-1].split()[1])
+    gain = -14 - lufs(); chain = f"volume={gain:.2f}dB,alimiter=limit=0.84:level=false,"
+    gain += -14 - lufs(chain); chain = f"volume={gain:.2f}dB,alimiter=limit=0.84:level=false,"   # second pass corrects for the limiter
+    print(f"  voice {lufs(chain):.1f} LUFS")
+    af = "[1:a]" + chain + "aresample=48000[v];[2:a]aresample=48000,volume=0.5[s];[v][s]amix=inputs=2:normalize=0[a]"
     p = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-i", vw, "-i", sw,
                           "-filter_complex", af, "-map", "0:v", "-map", "[a]", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-maxrate", "9M", "-bufsize", "18M",
                           "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-t", str(DUR), "-movflags", "+faststart", mp4], stdin=subprocess.PIPE)
