@@ -10,14 +10,17 @@ for @lucarobertopotti (personal) and @sumisura.brussels (brand). Talk to Luca in
    - Judge a reel only after **48 h**: trial reels often get a second wave a day or two later.
    - Steer on **share rate** (shares / reach; goal >2%, ideal 3.5–5%) and **skip rate** (goal <40%).
    - Name the winners, say why they work, and base the next batch on them.
-2. **Brief**: 5 topics per batch. Show Luca the hooks before rendering a large batch.
-3. **Make**: footage + animation (see Format). Render with the engine, check frames (contact sheet) before posting.
-4. **Upload**: commit the mp4s to `reels/vN/` and push. Media URL for Metricool:
+2. **Trends** (before every new batch): follow the "Trend step" of the sumisura-reels skill (last30days if available,
+   otherwise web search: news, new studies, social hooks, skeptical coverage from the last 30 days). Save the brief as
+   `trends/YYYY-MM-DD-<topic>.md`.
+3. **Brief**: 5 topics per batch. Show Luca the hooks before rendering a large batch.
+4. **Make**: footage + animation (see Format). Render with the engine, check frames (contact sheet) before posting.
+5. **Upload**: commit the mp4s to `reels/vN/` and push. Media URL for Metricool:
    `https://raw.githubusercontent.com/vcg47hyyct-commits/sumisura-reels/main/reels/vN/<file>.mp4`
-5. **Schedule** in Metricool as `TRIAL_REEL` (`isAiGenerated: true`, `showReelOnFeed: true`).
+6. **Schedule** in Metricool as `TRIAL_REEL` (`isAiGenerated: true`, `showReelOnFeed: true`).
    **1 reel every 4 hours, never several at the same time.** Batches of 5 posted at once failed at Instagram
    ("unexpected error", 1–2 out of 5). First check the existing queue with getScheduledPosts and continue the rhythm.
-6. Winner → Luca shares it himself to followers / reposts it as a collab with @sumisura.brussels
+7. Winner → Luca shares it himself to followers / reposts it as a collab with @sumisura.brussels
    (the brand account can't use viral audio, so test on the personal account first).
 
 ## What works (data Nov 2026)
