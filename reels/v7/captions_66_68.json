@@ -4,8 +4,21 @@
   "67_faster_10k_sauna": "Want a faster 10K? Sit in a sauna.\nRunners who added about 30 min of sauna right after training for 3 weeks lasted 32% longer before exhaustion, which the researchers put at roughly 1.9% in a race (Scoon et al., 2007). On a 50-minute 10K that would be close to a minute. Small study: 6 runners.\nNo extra kilometres. Just heat.\nWhat's your 10K time?\n#sumisura #sauna #running #10k #brussels",
   "68_run_isnt_over_sauna": "Your run isn't over. Go sit in the sauna.\nCompetitive runners who sat in a sauna for about 30 min right after training, for 3 weeks: time to exhaustion +32%, roughly 1.9% faster in a race (Scoon et al., 2007). A small study: 6 runners.\nThe run is the work. The heat is the extra.\nSauna after your run?\n#sumisura #sauna #running #endurance #brussels"
  },
- "plan": [],
+ "plan": [
+  [
+   "2026-11-26T19:22:00",
+   [
+    "67_faster_10k_sauna"
+   ]
+  ],
+  [
+   "2026-11-27T17:00:00",
+   [
+    "66_runners_dont_skip_sauna"
+   ]
+  ]
+ ],
  "pending": {
-  "68_run_isnt_over_sauna": "waiting for the MAGI-2 clip (prompt: MAGI_PROMPT in engine/specs6.py)"
+  "68_run_isnt_over_sauna": "planned Sat 2026-11-28 17:00, waiting for the MAGI-2 clip (MAGI_PROMPT in engine/specs6.py)"
  }
 }
