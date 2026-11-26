@@ -3,3 +3,4 @@ soundfile
 numpy
 pillow
 higgsfield-client
+cairosvg

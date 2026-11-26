@@ -16,7 +16,10 @@ OUT = os.environ.get("OUT", os.path.join(REPO, "out")); os.makedirs(OUT, exist_o
 FD = os.environ.get("FONTS", os.path.join(REPO, "assets", "fonts"))
 def F(w, s): return ImageFont.truetype(f"{FD}/bvp-{w}.ttf", s)
 _lp = os.path.join(REPO, "assets", "logo.png")
-if not os.path.exists(_lp): subprocess.run(["rsvg-convert", "-w", "300", "-h", "300", os.path.join(REPO, "assets", "logo.svg"), "-o", _lp], check=True)
+if not os.path.exists(_lp):
+    try: subprocess.run(["rsvg-convert", "-w", "300", "-h", "300", os.path.join(REPO, "assets", "logo.svg"), "-o", _lp], check=True)
+    except FileNotFoundError:  # no librsvg: pip install cairosvg
+        import cairosvg; cairosvg.svg2png(url=os.path.join(REPO, "assets", "logo.svg"), write_to=_lp, output_width=300, output_height=300)
 LOGO = Image.open(_lp).convert("RGBA")
 
 def ease(t): t = max(0., min(1., t)); return t * t * (3 - 2 * t)
@@ -136,7 +139,31 @@ def ic_lungs(d, cx, cy, r, a, t, col, gasp=1.0):
         d.line((cx, cy - r * .35, cx + s * r * .35, cy - r * .1), fill=A(col, a), width=6)
         x0 = cx + s * r * .18; x1 = cx + s * r * .18 + s * r * .8 * br
         d.rounded_rectangle((min(x0, x1), cy - r * .55 * br, max(x0, x1), cy + r * .85 * br), radius=int(r * .38), outline=A(col, a), width=6)
-ICONS = dict(ice=ic_ice, pulse=ic_pulse, scale=ic_scale, grip=ic_grip, gauge=ic_gauge, muscle=ic_muscle, lungs=ic_lungs)
+def ic_heat(d, cx, cy, r, a, t, col):
+    # three rising heat waves
+    for k in (-1, 0, 1):
+        pts = []
+        for i in range(41):
+            f = i / 40; y = cy + r - f * 2 * r
+            x = cx + k * r * .62 + r * .16 * math.sin(f * 2.4 * math.pi - t * 3 + k)
+            pts.append((x, y))
+        d.line(pts, fill=A(col, a * (.55 + .45 * abs(math.sin(t * 1.5 + k)))), width=7, joint="curve")
+def ic_runner(d, cx, cy, r, a, t, col):
+    # stick runner, legs and arms swinging
+    sw = math.sin(t * 9); c = A(col, a); w = 8
+    hip = (cx - r * .05, cy + r * .1); sh = (cx + r * .18, cy - r * .5)
+    d.ellipse((sh[0] + r * .02, sh[1] - r * .42, sh[0] + r * .34, sh[1] - r * .1), outline=c, width=w)
+    d.line((hip, sh), fill=c, width=w)
+    for s_ in (1, -1):
+        g = s_ * sw
+        kn = (hip[0] + r * .42 * g, hip[1] + r * .42); ft = (kn[0] - r * .28 + r * .2 * g, kn[1] + r * .46 - r * .2 * max(0, -g))
+        d.line((hip, kn, ft), fill=c, width=w, joint="curve")
+        el = (sh[0] - r * .3 * g, sh[1] + r * .3); hd = (el[0] + r * .3, el[1] + r * .12 - r * .25 * g)
+        d.line((sh, el, hd), fill=c, width=w - 2, joint="curve")
+    for k in range(3):
+        y = cy - r * .35 + k * r * .3; x = cx - r * 1.05 - (t * 260 + k * 40) % (r * .5)
+        d.line((x, y, x + r * .32, y), fill=A(col, a * .45), width=5)
+ICONS = dict(ice=ic_ice, pulse=ic_pulse, scale=ic_scale, grip=ic_grip, gauge=ic_gauge, muscle=ic_muscle, lungs=ic_lungs, heat=ic_heat, runner=ic_runner)
 def icon(d, spec, t, acc, a):
     if not spec: return
     name, cx, cy, r = spec[:4]; kw = dict(spec[4]) if len(spec) > 4 else {}
