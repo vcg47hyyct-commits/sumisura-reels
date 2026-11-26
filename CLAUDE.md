@@ -33,7 +33,9 @@ for @lucarobertopotti (personal) and @sumisura.brussels (brand). Talk to Luca in
 - 1080×1920, 30 fps, H.264, ±20 s. Hook in the first second. Cuts max 2 s.
 - **Mix**: own footage as hook and ending (face and real action score better), animation for the data in the middle.
   Footage must match the study (no sauna cycling for a passive-sauna study). Footage folder on Luca's Mac:
-  `~/Sumisura/Reels/Footage/<topic>/`. iPhone footage is HDR: tonemap to bt709 first.
+  `~/Sumisura/Reels/Footage/<topic>/`
+  (sauna-cycling, ijsbad, contrast, ademhaling, shiftwave, red-light, ihht, testing-vo2max, testing-kracht,
+  gym-training, luca-gezicht, center-sfeer). iPhone footage is HDR: tonemap to bt709 first.
 - **V3 retention model**: fast voice (Kokoro `am_michael`, speed 1.12), word-by-word captions, hook slam + boom,
   flash/whoosh cuts, counter ticks, ending on an easy question (loop). Slower versions are never posted.
 - Cold/ice-bath reels must *feel* cold: blue, ice, fast heartbeat, gasping, high speed.
