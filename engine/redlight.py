@@ -245,7 +245,10 @@ def build(name, v, hf=False, preview=False, still=False):
         r = subprocess.run(["ffmpeg", "-hide_banner", "-i", vw, "-af", extra + "ebur128", "-f", "null", "-"], capture_output=True, text=True).stderr
         return float([l for l in r.splitlines() if l.strip().startswith("I:")][-1].split()[1])
     gain = -14 - lufs(); chain = f"volume={gain:.2f}dB,alimiter=limit=0.84:level=false,"
-    gain += -14 - lufs(chain); chain = f"volume={gain:.2f}dB,alimiter=limit=0.84:level=false,"   # second pass corrects for the limiter
+    for _ in range(5):                                 # the limiter takes a little back: correct until within 0.15 LU
+        d_ = -14 - lufs(chain)
+        if abs(d_) < .15: break
+        gain += d_; chain = f"volume={gain:.2f}dB,alimiter=limit=0.84:level=false,"
     print(f"  voice {lufs(chain):.1f} LUFS")
     af = "[1:a]" + chain + "aresample=48000[v];[2:a]aresample=48000,volume=0.5[s];[v][s]amix=inputs=2:normalize=0[a]"
     p = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-i", vw, "-i", sw,
