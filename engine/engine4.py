@@ -159,10 +159,54 @@ def frost(im, a):
     rgba = np.dstack([np.full((H, W), 200, np.uint8), np.full((H, W), 228, np.uint8), np.full((H, W), 255, np.uint8), al])
     im.alpha_composite(Image.fromarray(rgba, "RGBA"))
 
+
+# ---------- footage clips (own footage or Higgsfield shots) ----------
+class Clip:
+    """Streams a video file as 1080x1920 RGB frames: cover-crop, HDR->SDR tonemap, loops if too short."""
+    def __init__(self, path, start=0.0):
+        self.path = path if os.path.isabs(path) else os.path.join(REPO, path); self.start = start; self.p = None
+        trc = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=color_transfer",
+                              "-of", "csv=p=0", self.path], capture_output=True, text=True).stdout.strip()
+        hdr = trc in ("smpte2084", "arib-std-b67")
+        tm = ("zscale=t=linear:npl=203,format=gbrpf32le,zscale=p=bt709,tonemap=hable:desat=0,"
+              "zscale=t=bt709:m=bt709:r=tv,format=rgb24,") if hdr else ""
+        self.vf = tm + f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},format=rgb24"
+    def _open(self):
+        if self.p: self.p.kill()
+        self.p = subprocess.Popen(["ffmpeg", "-v", "error", "-ss", str(self.start), "-i", self.path, "-vf", self.vf,
+                                   "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    def frame(self):
+        if self.p is None: self._open()
+        b = self.p.stdout.read(W * H * 3)
+        if len(b) < W * H * 3: self._open(); b = self.p.stdout.read(W * H * 3)
+        return Image.frombytes("RGB", (W, H), b)
+
+_SHADE = None
+def shade():
+    global _SHADE
+    if _SHADE is None:
+        g = np.zeros((H, W), np.float32)
+        top = np.linspace(.62, 0, 700); g[:700] = np.maximum(g[:700], top[:, None])
+        bot = np.linspace(0, .72, 900); g[H - 900:] = np.maximum(g[H - 900:], bot[:, None])
+        a = (np.clip(g + .12, 0, 1) * 255).astype(np.uint8)
+        _SHADE = Image.fromarray(np.dstack([np.full((H, W), c, np.uint8) for c in INK] + [a]), "RGBA")
+    return _SHADE
+
 # ---------- scene drawing ----------
 GOLD = (255, 214, 102)
 def draw_scene(sc, t, dur, acc, fi, cold):
     typ = sc["type"]
+    if typ == "clip":
+        im = sc["_clip"].frame().convert("RGBA"); im.alpha_composite(shade()); d = ImageDraw.Draw(im)
+        if sc.get("label"): label(d, t, sc["label"], acc)
+        for i, s_ in enumerate(sc.get("head", [])):
+            bold = i == 0 or s_.startswith("*"); s_ = s_.lstrip("*")
+            f = fit(F(800 if i == 0 else 400, 96 if i == 0 else 72), s_)
+            a = ease(t / .18) if i == 0 else fade(t, .35, .2)
+            T(d, (540, 330 + i * 120), s_, f, a, GOLD if s_ in sc.get("gold", []) else PAPER)
+        source(d, t, sc.get("src"))
+        if sc.get("_words") is not None: captions(d, sc["_words"], t, acc)
+        return im
     k = (.55 + .2 * ease(t / 1.5)) if typ == "hook" else .38
     im = finish_bg(sc["_bg"] if k == .38 else make_bg(acc, k), fi)
     d = ImageDraw.Draw(im)
@@ -302,6 +346,7 @@ def build(spec, still=False):
         dur = d_ + GAP + sc.get("hold", 0)
         if sc["type"] == "end": dur = max(dur, 2.6)
         sc["_bg"] = make_bg(acc, .38)
+        if sc["type"] == "clip": sc["_clip"] = Clip(sc["file"], sc.get("start", 0.0))
         sc["_words"] = word_times(sc["vo"], d_, 0.0) if sc.get("caps", True) else None
         timeline.append((t, dur, sc, aud)); t += dur
     total = t

@@ -2,3 +2,5 @@ out/
 tts/
 assets/logo.png
 __pycache__/
+.env
+footage/

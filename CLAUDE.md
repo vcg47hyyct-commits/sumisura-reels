@@ -62,8 +62,22 @@ python3 engine/engine4.py all still        # stills per scene → out/
 python3 engine/engine4.py 61_breath_exhale_heart   # video → out/
 SPECS=specs6 python3 engine/engine4.py all  # another spec file in engine/
 ```
-- `engine/specs5.py` = example batch 61–65 (scene types: hook, text, stat, compare, dots, breath, end).
-- Still to build: a `clip` scene (own footage as background with overlay) for the footage+animation mix.
+- `engine/specs5.py` = example batch 61–65 (scene types: hook, text, stat, compare, dots, breath, end, clip).
+- **`clip` scene** = footage as background with text + captions on top (cover-crop to 9:16, HDR tonemapped automatically):
+  `dict(type="clip", file="~/Sumisura/Reels/Footage/sauna-cycling/x.mov" or "footage/ai/<reel>/<shot>.mp4",
+  start=2.0, head=["Easy riding.", "38°C."], gold=["38°C."], vo="...")`. Pick clips that match the study.
+  Footage from Luca's Mac: copy the chosen clips into `footage/` (git-ignored) before rendering.
+
+## Higgsfield (atmosphere shots via API)
+- `engine/higgsfield.py` generates shots from the `shots` list of a reel in the spec file:
+  `shots=[dict(name="ice_macro", prompt="...", seconds=5, image=None)]`. **Max 3 per topic** (the script refuses more).
+- Credentials in `.env` (see `.env.example`): `HF_API_KEY`, `HF_API_SECRET`. Never commit `.env`.
+  The API is a separate product with a prepaid USD balance (not the Plus plan credits).
+- Always do a dry run first (`python3 engine/higgsfield.py <id>`), show Luca the prompts if it's a new kind of shot,
+  then `--go`. Results: `footage/ai/<reel>/<name>.mp4`, spend log in `footage/ai/log.jsonl`.
+- House style is appended to every prompt automatically (photoreal, calm premium clinic, no fire/glow/text/sci-fi).
+  Check every shot before use: anything that looks too "AI" is not used. Use AI shots for atmosphere only,
+  never as fake "real" footage of Sumisura or of a study.
 - Re-encode for upload: `-crf 22 -maxrate 9M` (files under 30 MB).
 - Captions per batch: `reels/vN/captions_*.json`.
 

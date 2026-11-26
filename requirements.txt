@@ -2,3 +2,4 @@ kokoro-onnx
 soundfile
 numpy
 pillow
+higgsfield-client
