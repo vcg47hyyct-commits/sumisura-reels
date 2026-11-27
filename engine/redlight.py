@@ -108,6 +108,7 @@ def caps(im, words, t):
     for i, (w, a0, a1) in enumerate(words):
         if t >= a0: idx = i
     c0 = (idx // 3) * 3; chunk = words[c0:c0 + 3]; f = F(700, 58)
+    if t < chunk[0][1]: return                        # no empty band before the first word (frame 1 = last frame)
     while sum(f.getlength(w) for w, _, _ in chunk) + 18 * (len(chunk) - 1) > MAXW: f = f.font_variant(size=f.size - 4)
     sz = [f.getlength(w) for w, _, _ in chunk]; tot = sum(sz) + 18 * (len(chunk) - 1); x = CX - tot / 2
     ImageDraw.Draw(im, "RGBA").rounded_rectangle((x - 26, 1196, x + tot + 26, 1296), radius=22, fill=(0, 0, 0, 120))   # band so captions read on any visual
@@ -275,18 +276,18 @@ def build(name, v, hf=False, preview=False, still=False):
         for i, (a, b, vis, txt, vo) in enumerate(segs):
             if a <= tg < b: break
         t = tg - a; kind = vis[0]
-        if kind in ("clip", "ai"): im = clipframe(i, vis[1], 0.3 if kind == "ai" else 0.)
+        if kind in ("clip", "ai"): im = clipframe(i, vis[1], 0.)
         elif kind == "loop":                              # opening shot played backwards: the last frame equals frame 1
             src = vis[1]; n = int((b - a) * FPS); k_ = max(0, n - 1 - int(round(t * FPS)))
             if src[0] == "anim": im = anim(src[1], src[2], k_ / FPS, fi)
             else:
                 if loop is None:
-                    if os.path.exists(_path(src[1])): c = Clip(src[1], 0.3 if src[0] == "ai" else 0.); loop = [c.frame() for _ in range(n)]
+                    if os.path.exists(_path(src[1])): c = Clip(src[1], 0.); loop = [c.frame() for _ in range(n)]
                     else: loop = [placeholder(src[1])] * n
                 im = loop[k_].copy()
         elif vis[1] == "bar":
             o = vis[2]; bg = o.get("bg")
-            im = clipframe(i, bg[1], 0.3) if bg else Image.new("RGB", (W, H), (12, 11, 12))
+            im = clipframe(i, bg[1], 0.) if bg else Image.new("RGB", (W, H), (12, 11, 12))
             if bg: im = Image.eval(im, lambda v_: int(v_ * .38))
             else:
                 d0 = ImageDraw.Draw(im, "RGBA"); _ribbons(d0, tg, [o["vals"][0][2]], 1020, amp=60, a=.35)
